@@ -2,8 +2,6 @@ async function drawChart() {
   const dataset = await d3.json("./nyc_weather_data.json");
   const metricAccessor = (d) => d.humidity;
   const yAccessor = (d) => d.length;
-  //   const dateParser = d3.timeParse("%Y-%m-%d");
-  //   const xAccessor = (d) => dateParser(d.date);
 
   const width = 600;
 
@@ -65,47 +63,61 @@ async function drawChart() {
   const barRects = binGroups
     .append("rect")
     .attr("x", (d) => xScale(d.x0) + barPadding / 2)
-    .attr("y", (d) => yScale(yAccessor(d)));
-  // .attr("height", (d) => dimensions.boundedHeight - yScale(yAccessor(d)))
-  // .attr("width", (d) => xScale(d.x1) - xScale(d.x0) - barPadding);
+    .attr("y", (d) => yScale(yAccessor(d)))
+    .attr("width", (d) => d3.max([0, xScale(d.x1) - xScale(d.x0) - barPadding]))
+    .attr("height", (d) =>
+      d3.max([0, dimensions.boundedHeight - yScale(yAccessor(d))])
+    )
+    .attr("fill", "steelblue");
 
-  //   // Create scales
-  //   const yScale = d3
-  //     .scaleLinear()
-  //     .domain(d3.extent(data, yAccessor))
-  //     .range([dimensions.boundedHeight, 0]);
+  const barText = binGroups
+    .filter(yAccessor)
+    .append("text")
+    .attr("x", (d) => xScale(d.x0) + (xScale(d.x1) - xScale(d.x0)) / 2)
+    .attr("y", (d) => yScale(yAccessor(d)) - 10)
+    .attr("dy", "0.35em")
+    .text(yAccessor)
+    .style("text-anchor", "middle")
+    .style("font-size", "12px")
+    .style("font-family", "sans-serif");
 
-  //   const freezingTemperaturePlacement = yScale(32);
-  //   bounds
-  //     .append("rect")
-  //     .attr("x", 0)
-  //     .attr("width", dimensions.boundedWidth)
-  //     .attr("y", freezingTemperaturePlacement)
-  //     .attr("height", dimensions.boundedHeight - freezingTemperaturePlacement)
-  //     .attr("fill", "#e0f3f3");
+  const mean = d3.mean(dataset, metricAccessor);
 
-  //   // Draw data
-  //   const lineGenerator = d3
-  //     .line()
-  //     .x((d) => xScale(xAccessor(d)))
-  //     .y((d) => yScale(yAccessor(d)));
+  const meanLine = bounds
+    .append("line")
+    .attr("x1", xScale(mean))
+    .attr("x2", xScale(mean))
+    .attr("y1", -15)
+    .attr("y2", dimensions.boundedHeight)
+    .attr("stroke", "red")
+    .attr("stroke-dasharray", "2px 4px");
 
-  //   const line = bounds
-  //     .append("path")
-  //     .attr("d", lineGenerator(data))
-  //     .attr("fill", "none")
-  //     .attr("stroke", "black")
-  //     .attr("stroke-width", 2);
+  const meanLabel = bounds
+    .append("text")
+    .attr("x", xScale(mean))
+    .attr("y", -20)
+    .text(`mean`)
+    .attr("fill", "red")
+    .style("font-size", "12px")
+    .style("font-family", "sans-serif")
+    .style("text-anchor", "middle");
 
-  //   // Add axes
-  //   const yAxisGenerator = d3.axisLeft(yScale);
-  //   bounds.append("g").call(yAxisGenerator);
+  const xAxisGenerator = d3.axisBottom(xScale);
 
-  //   const xAxisGenerator = d3.axisBottom(xScale);
-  //   bounds
-  //     .append("g")
-  //     .call(xAxisGenerator)
-  //     .style("transform", `translateY(${dimensions.boundedHeight}px)`);
+  const xAxis = bounds
+    .append("g")
+    .call(xAxisGenerator)
+    .style("transform", `translateY(${dimensions.boundedHeight}px)`);
+
+  const xAxisLabel = xAxis
+    .append("text")
+    .attr("x", dimensions.boundedWidth / 2)
+    .attr("y", dimensions.margin.bottom - 10)
+    .text("Humidity")
+    .attr("fill", "black")
+    .style("font-size", "12px")
+    .style("font-family", "sans-serif")
+    .style("text-anchor", "middle");
 }
 
 drawChart();
